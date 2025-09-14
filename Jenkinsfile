@@ -33,11 +33,21 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                script {
-                    sh 'sleep 5 && curl -f http://localhost:5000 || (echo "App did not start!" && exit 1)'
+        stage('Test Python App') {
+            agent {
+                docker {
+                    image 'python:3.9-slim'
                 }
+            }
+            steps {
+                sh '''
+                    python -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    mkdir -p reports
+                    pytest -q --junitxml=reports/junit.xml
+                '''
             }
         }
 
@@ -57,7 +67,7 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline finished!"
+            echo "✅ Pipeline finished!"
         }
     }
 }
